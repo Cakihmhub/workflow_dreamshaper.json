@@ -13,11 +13,24 @@ RUN wget -q -O /comfyui/models/loras/PainterlyFantasiaSDXL.safetensors "https://
 # download Watercolor Style LoRA from CivitAI
 RUN wget -q -O /comfyui/models/loras/ral-wtrclr-sdxl.safetensors "https://civitai.com/api/download/models/539071"
 
-# download Z-Image Turbo model
-RUN wget -q -O /comfyui/models/unet/z_image_turbo_bf16.safetensors "https://huggingface.co/Freepik/z-image-turbo/resolve/main/z_image_turbo_bf16.safetensors" --header="Authorization: Bearer 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"
+# Z-Image Turbo from Comfy-Org public mirror (no auth needed)
+RUN wget -q -O /comfyui/models/unet/z_image_turbo_bf16.safetensors \
+    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
 
-# download CLIP for Z-Turbo
-RUN wget -q -O /comfyui/models/clip/qwen_3_4b.safetensors "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/qwen_3_4b.safetensors" --header="Authorization: Bearer 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" || true
+# VAE for Z-Turbo from Comfy-Org mirror
+RUN wget -q -O /comfyui/models/vae/ae.safetensors \
+    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
+
+# CLIP qwen for Z-Turbo from Comfy-Org mirror
+RUN wget -q -O /comfyui/models/clip/qwen_3_4b.safetensors \
+    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
+
+# CLIP L + T5 for FLUX/Z-Turbo compatibility
+RUN wget -q -O /comfyui/models/clip/clip_l.safetensors \
+    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors"
+
+RUN wget -q -O /comfyui/models/clip/t5xxl_fp8_e4m3fn.safetensors \
+    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors"
 
 # download Fantasy Illustration LoRA for Z-Turbo
 RUN wget -q -O /comfyui/models/loras/Fantasy_Comic_ArtStyle.safetensors "https://civitai.com/api/download/models/2553030"
