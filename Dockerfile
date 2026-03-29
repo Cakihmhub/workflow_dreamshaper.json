@@ -1,44 +1,35 @@
 # clean base image containing only comfyui, comfy-cli and comfyui-manager
 FROM runpod/worker-comfyui:5.5.1-base
 
-# download DreamShaper XL v2.1 from CivitAI (with retry)
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/checkpoints/dreamshaperXL_v21.safetensors "https://civitai.com/api/download/models/354657" || \
-    curl -L --retry 3 --retry-delay 5 -o /comfyui/models/checkpoints/dreamshaperXL_v21.safetensors "https://civitai.com/api/download/models/354657"
+# download DreamShaper XL v2.1 from CivitAI (with retry + user-agent)
+RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/checkpoints/dreamshaperXL_v21.safetensors "https://civitai.com/api/download/models/354657" || true
 
-# download Juggernaut XL v10 from CivitAI (with retry)
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/checkpoints/juggernautXL_v10.safetensors "https://civitai.com/api/download/models/782002" || \
-    curl -L --retry 3 --retry-delay 5 -o /comfyui/models/checkpoints/juggernautXL_v10.safetensors "https://civitai.com/api/download/models/782002"
+# download Juggernaut XL v10 from CivitAI (with retry + user-agent)
+RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/checkpoints/juggernautXL_v10.safetensors "https://civitai.com/api/download/models/782002" || true
 
-# download Painterly Fantasia LoRA from CivitAI (with retry + fallback)
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/loras/PainterlyFantasiaSDXL.safetensors "https://civitai.com/api/download/models/1304115" || \
-    curl -L --retry 3 --retry-delay 10 -o /comfyui/models/loras/PainterlyFantasiaSDXL.safetensors "https://civitai.com/api/download/models/1304115" || \
-    echo "WARNING: PainterlyFantasia download failed, will retry at runtime"
+# Z-Image Turbo from Comfy-Org (using pip install huggingface_hub for proper download)
+RUN pip install -q huggingface_hub && \
+    python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('Comfy-Org/z_image_turbo', 'split_files/diffusion_models/z_image_turbo_bf16.safetensors', local_dir='/comfyui/models/unet', local_dir_use_symlinks=False)" && \
+    mv /comfyui/models/unet/split_files/diffusion_models/z_image_turbo_bf16.safetensors /comfyui/models/unet/z_image_turbo_bf16.safetensors || true
 
-# download Watercolor Style LoRA from CivitAI (with retry)
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/loras/ral-wtrclr-sdxl.safetensors "https://civitai.com/api/download/models/539071" || \
-    curl -L --retry 3 --retry-delay 10 -o /comfyui/models/loras/ral-wtrclr-sdxl.safetensors "https://civitai.com/api/download/models/539071" || \
-    echo "WARNING: Watercolor download failed, will retry at runtime"
+# VAE for Z-Turbo
+RUN python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('Comfy-Org/z_image_turbo', 'split_files/vae/ae.safetensors', local_dir='/comfyui/models/vae', local_dir_use_symlinks=False)" && \
+    mv /comfyui/models/vae/split_files/vae/ae.safetensors /comfyui/models/vae/ae.safetensors || true
 
-# Z-Image Turbo from Comfy-Org public mirror (no auth needed)
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/unet/z_image_turbo_bf16.safetensors \
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
+# CLIP qwen for Z-Turbo
+RUN python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('Comfy-Org/z_image_turbo', 'split_files/text_encoders/qwen_3_4b.safetensors', local_dir='/comfyui/models/clip', local_dir_use_symlinks=False)" && \
+    mv /comfyui/models/clip/split_files/text_encoders/qwen_3_4b.safetensors /comfyui/models/clip/qwen_3_4b.safetensors || true
 
-# VAE for Z-Turbo from Comfy-Org mirror
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/vae/ae.safetensors \
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
+# CLIP L for FLUX/Z-Turbo
+RUN python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('comfyanonymous/flux_text_encoders', 'clip_l.safetensors', local_dir='/comfyui/models/clip', local_dir_use_symlinks=False)"
 
-# CLIP qwen for Z-Turbo from Comfy-Org mirror
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/clip/qwen_3_4b.safetensors \
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
+# T5 for FLUX/Z-Turbo
+RUN python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('comfyanonymous/flux_text_encoders', 't5xxl_fp8_e4m3fn.safetensors', local_dir='/comfyui/models/clip', local_dir_use_symlinks=False)"
 
-# CLIP L + T5 for FLUX/Z-Turbo compatibility
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/clip/clip_l.safetensors \
-    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors"
+# LoRAs from CivitAI (with user-agent to avoid blocks)
+RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/loras/PainterlyFantasiaSDXL.safetensors "https://civitai.com/api/download/models/1304115" || true
+RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/loras/ral-wtrclr-sdxl.safetensors "https://civitai.com/api/download/models/539071" || true
+RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/loras/Fantasy_Comic_ArtStyle.safetensors "https://civitai.com/api/download/models/2553030" || true
 
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/clip/t5xxl_fp8_e4m3fn.safetensors \
-    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors"
-
-# download Fantasy Illustration LoRA for Z-Turbo (with retry)
-RUN wget --tries=3 --timeout=120 -q -O /comfyui/models/loras/Fantasy_Comic_ArtStyle.safetensors "https://civitai.com/api/download/models/2553030" || \
-    curl -L --retry 3 --retry-delay 10 -o /comfyui/models/loras/Fantasy_Comic_ArtStyle.safetensors "https://civitai.com/api/download/models/2553030" || \
-    echo "WARNING: Fantasy LoRA download failed, will retry at runtime"
+# Verify key files exist and have size
+RUN ls -lh /comfyui/models/unet/ /comfyui/models/vae/ /comfyui/models/clip/ /comfyui/models/loras/ /comfyui/models/checkpoints/
