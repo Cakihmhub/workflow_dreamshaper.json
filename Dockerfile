@@ -29,7 +29,10 @@ RUN python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('co
 # LoRAs from CivitAI (with user-agent to avoid blocks)
 RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/loras/PainterlyFantasiaSDXL.safetensors "https://civitai.com/api/download/models/1304115" || true
 RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/loras/ral-wtrclr-sdxl.safetensors "https://civitai.com/api/download/models/539071" || true
-RUN wget --tries=3 --timeout=120 --user-agent="Mozilla/5.0" -q -O /comfyui/models/loras/Fantasy_Comic_ArtStyle.safetensors "https://civitai.com/api/download/models/2553030" || true
+# Fantasy Comic ArtStyle LoRA from GitHub LFS (CivitAI blocks RunPod builds)
+RUN pip install -q huggingface_hub 2>/dev/null; \
+    python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download('Cakihmhub/workflow_dreamshaper.json', 'Fantasy_Comic_ArtStyle.safetensors', local_dir='/comfyui/models/loras')" || \
+    wget --tries=3 --timeout=120 -q -O /comfyui/models/loras/Fantasy_Comic_ArtStyle.safetensors "https://github.com/Cakihmhub/workflow_dreamshaper.json/raw/main/Fantasy_Comic_ArtStyle.safetensors" || true
 
 # Verify key files exist and have size
 RUN ls -lh /comfyui/models/unet/ /comfyui/models/vae/ /comfyui/models/clip/ /comfyui/models/loras/ /comfyui/models/checkpoints/
